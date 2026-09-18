@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Daily Bid — Daily Deals Legends</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#ffffff; --surface:#f6f7fb; --line:#e7e9f0;
+    --ink:#161a23; --muted:#727a8c;
+    --g1:#0f9b6c; --g2:#17c39a;
+    --hot:#e0483c; --warn:#d98324;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  body{margin:0;background:var(--bg);color:var(--ink);
+       font-family:"Plus Jakarta Sans",system-ui,-apple-system,sans-serif;
+       font-feature-settings:"tnum" 1;}
+  .wrap{max-width:460px;margin:0 auto;padding:0 18px 48px}
+
+  /* timer bar */
+  #bar{position:fixed;top:0;left:0;height:4px;width:100%;
+       background:linear-gradient(90deg,var(--g1),var(--g2));
+       transform-origin:left;transition:transform .9s linear;z-index:9}
+  #bar.hot{background:linear-gradient(90deg,var(--hot),#f0803a)}
+
+  header{padding:26px 0 10px}
+  .brand{font-size:13px;font-weight:600;color:var(--muted);letter-spacing:.01em}
+  h1{font-size:23px;line-height:1.25;font-weight:800;margin:6px 0 0;letter-spacing:-.02em}
+  .meta{margin-top:8px;font-size:14px;color:var(--muted)}
+  .meta b{color:var(--ink);font-weight:600}
+
+  .hero{margin-top:22px;padding:26px 22px;border-radius:22px;
+        background:linear-gradient(135deg,#f2fbf7,#eef5ff);border:1px solid var(--line)}
+  .lead{font-size:14px;color:var(--muted)}
+  .amt{font-size:58px;font-weight:800;letter-spacing:-.045em;line-height:1;margin:6px 0 0;
+       background:linear-gradient(135deg,var(--g1),var(--g2));-webkit-background-clip:text;
+       background-clip:text;color:transparent}
+  .by{margin-top:10px;font-size:16px;font-weight:600}
+  .by span{color:var(--muted);font-weight:400}
+  .clock{margin-top:18px;display:flex;align-items:baseline;gap:8px}
+  .clock .t{font-size:30px;font-weight:800;letter-spacing:-.03em}
+  .clock.hot .t{color:var(--hot)}
+  .clock .l{font-size:13px;color:var(--muted)}
+
+  button{font-family:inherit}
+  .cta{margin-top:18px;width:100%;border:0;border-radius:16px;padding:19px 16px;
+       font-size:18px;font-weight:700;color:#fff;cursor:pointer;
+       background:linear-gradient(135deg,var(--g1),var(--g2));
+       box-shadow:0 8px 22px rgba(15,155,108,.26);transition:transform .12s ease}
+  .cta:active{transform:scale(.985)}
+  .cta[disabled]{background:#dfe3ec;color:#98a0b0;box-shadow:none;cursor:default}
+  .cta.claim{background:linear-gradient(135deg,#1d4ed8,#4f46e5);box-shadow:0 8px 22px rgba(37,78,216,.24)}
+  .win{margin-top:16px;padding:16px;border-radius:16px;background:#fff;border:1px solid var(--line)}
+  .win label{display:block;font-size:13px;font-weight:600;margin-bottom:6px}
+  .win input{width:100%;padding:13px;border:1px solid var(--line);border-radius:12px;font-size:17px;
+             font-weight:600;font-family:inherit;background:var(--surface);margin:0}
+  .win input:focus{outline:2px solid var(--g1);outline-offset:1px;background:#fff}
+  .calc{margin-top:10px;font-size:14px;line-height:1.6;color:var(--muted)}
+  .calc b{color:var(--ink)}
+  .calc .big{color:var(--g1);font-weight:800;font-size:17px}
+  .cta.ghost{margin-top:10px;background:#fff;color:var(--ink);border:1.5px solid var(--line);
+             box-shadow:none;font-size:16px}
+  .note{margin-top:10px;font-size:13px;color:var(--muted);text-align:center;min-height:18px}
+  .note.err{color:var(--hot)}
+
+  .board{margin-top:28px}
+  .board h2{font-size:14px;font-weight:600;color:var(--muted);margin:0 0 10px}
+  .row{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:14px;
+       background:var(--surface);margin-bottom:8px}
+  .row.top{background:linear-gradient(135deg,#f0fbf6,#eaf4ff);border:1px solid #dcefe6}
+  .row .n{flex:1;font-weight:600;font-size:15px}
+  .row .a{font-weight:700;font-size:15px}
+  .row .w{width:22px;height:22px;border-radius:50%;display:grid;place-items:center;
+          background:#fff;font-size:11px;font-weight:700;color:var(--muted);border:1px solid var(--line)}
+  .empty{padding:18px;border-radius:14px;background:var(--surface);color:var(--muted);font-size:14px}
+
+  .card{margin-top:22px;padding:22px;border:1px solid var(--line);border-radius:20px}
+  .card h2{margin:0;font-size:19px;font-weight:800;letter-spacing:-.02em}
+  .card p{margin:8px 0 18px;font-size:14px;color:var(--muted);line-height:1.5}
+  label{display:block;font-size:13px;font-weight:600;margin:0 0 6px}
+  input{width:100%;padding:14px;border:1px solid var(--line);border-radius:13px;font-size:16px;
+        font-family:inherit;background:var(--surface);margin-bottom:14px}
+  input:focus{outline:2px solid var(--g1);outline-offset:1px;background:#fff}
+
+  .rules{margin-top:26px;padding-top:18px;border-top:1px solid var(--line);
+         font-size:13px;color:var(--muted);line-height:1.7}
+  .you{margin-top:20px;font-size:13px;color:var(--muted);text-align:center}
+  .you a{color:var(--muted)}
+  .hide{display:none}
+  @media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div id="bar"></div>
+<div class="wrap">
+
+  <!-- REGISTER -->
+  <section id="reg" class="card hide">
+    <h2>Bid lagane se pehle</h2>
+    <p>Sirf ek baar. Aapka naam hi group me sabko dikhega.</p>
+    <label for="rn">Naam</label>
+    <input id="rn" type="text" autocomplete="name" placeholder="Arjun">
+    <label for="rp">Mobile number</label>
+    <input id="rp" type="tel" inputmode="numeric" autocomplete="tel" placeholder="98XXXXXXXX">
+    <button class="cta" id="regBtn">Bidding shuru karein</button>
+    <div class="note" id="regNote"></div>
+  </section>
+
+  <!-- DEAL -->
+  <section id="deal" class="hide">
+    <header>
+      <div class="brand">Daily Deals Legends · Live bid</div>
+      <h1 id="title">—</h1>
+      <div class="meta" id="sub"></div>
+    </header>
+
+    <div class="hero">
+      <div class="lead" id="lead">Abhi ki bid</div>
+      <div class="amt" id="amt">₹0</div>
+      <div class="by" id="by"></div>
+      <div class="clock" id="clock"><div class="t" id="t">5:00</div><div class="l">bache hain</div></div>
+      <div class="win hide" id="winBox">
+        <label for="oa">Order amount — jo aap actually pay karenge</label>
+        <input id="oa" type="number" inputmode="numeric">
+        <div class="calc" id="calc"></div>
+      </div>
+      <button class="cta" id="bidBtn">Bid</button>
+      <button class="cta ghost hide" id="refBtn">Refund form kholein</button>
+      <div class="note" id="note"></div>
+    </div>
+
+    <div class="board">
+      <h2>Bid history</h2>
+      <div id="list"><div class="empty">Abhi tak koi bid nahi. Pehli bid aapki ho sakti hai.</div></div>
+    </div>
+
+    <div class="rules" id="rules"></div>
+    <div class="you" id="you"></div>
+  </section>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script>
+const SUPABASE_URL = "https://vhnmtjmdiqdckrvyslsq.supabase.co";
+const SUPABASE_KEY = "sb_publishable_zLlErI30rbLGpViVmgYE4g_FeBI8tKd";
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+const code = new URLSearchParams(location.search).get("d");
+const $ = id => document.getElementById(id);
+let me = null, deal = null, bids = [], offset = 0, closing = false, busy = false, forms = null;
+
+try { me = JSON.parse(localStorage.getItem("ddl_bid_user") || "null"); } catch(e){ me = null; }
+try { forms = JSON.parse(localStorage.getItem("ddl_forms_" + code) || "null"); } catch(e){ forms = null; }
+
+const rupee = n => "₹" + Number(n || 0).toLocaleString("en-IN");
+const now = () => Date.now() + offset;
+const left = () => deal ? Math.max(0, new Date(deal.ends_at).getTime() - now()) : 0;
+const cap = () => deal ? Math.round(deal.mrp * deal.cap_pct / 100) : 0;
+const nextBid = () => deal ? (deal.current_bid === null ? Number(deal.start_bid) : Number(deal.current_bid) + Number(deal.step)) : 0;
+
+/* ---------- boot ---------- */
+(async function init(){
+  if(!code){ $("deal").classList.remove("hide"); $("title").textContent = "Link adhoora hai"; $("sub").textContent = "Group me jo link aaya hai wahi kholein."; $("bidBtn").disabled = true; return; }
+
+  const { data: srv } = await sb.rpc("ddl_server_now");
+  if(srv) offset = new Date(srv).getTime() - Date.now();
+
+  await loadDeal();
+  if(!deal) return;
+  await loadBids();
+
+  if(me) { $("deal").classList.remove("hide"); } else { $("reg").classList.remove("hide"); }
+  render();
+  subscribe();
+  setInterval(tick, 250);
+  setInterval(loadDeal, 6000);   // realtime drop ho jaye to backup
+})();
+
+async function loadDeal(){
+  const { data, error } = await sb.from("ddl_deals").select("*").eq("code", code).maybeSingle();
+  if(error || !data){
+    $("deal").classList.remove("hide"); $("reg").classList.add("hide");
+    $("title").textContent = "Deal nahi mili";
+    $("sub").textContent = "Code " + code + " ke liye koi live bid nahi hai.";
+    $("bidBtn").disabled = true;
+    return;
+  }
+  deal = data; render();
+}
+
+async function loadBids(){
+  const { data } = await sb.from("ddl_bids").select("*").eq("deal_id", deal.id).order("id",{ascending:false}).limit(12);
+  bids = data || []; renderBids();
+}
+
+function subscribe(){
+  sb.channel("bid-" + code)
+    .on("postgres_changes", {event:"UPDATE", schema:"public", table:"ddl_deals", filter:"code=eq." + code},
+        p => { deal = p.new; render(); })
+    .on("postgres_changes", {event:"INSERT", schema:"public", table:"ddl_bids", filter:"deal_id=eq." + deal.id},
+        p => { bids.unshift(p.new); bids = bids.slice(0,12); renderBids(); })
+    .subscribe();
+}
+
+/* ---------- register ---------- */
+$("regBtn").onclick = async () => {
+  const name = $("rn").value.trim(), phone = $("rp").value.trim();
+  $("regNote").className = "note"; $("regNote").textContent = "Ruko...";
+  const { data, error } = await sb.rpc("ddl_register", { p_name: name, p_phone: phone });
+  if(error || !data || !data.ok){
+    $("regNote").className = "note err";
+    $("regNote").textContent = (data && data.msg) || "Kuch galat ho gaya, dobara try karein";
+    return;
+  }
+  me = { id: data.id, name: data.name, token: data.token };
+  localStorage.setItem("ddl_bid_user", JSON.stringify(me));
+  $("reg").classList.add("hide"); $("deal").classList.remove("hide");
+  render();
+};
+
+/* ---------- bid ---------- */
+$("oa").oninput = () => { showCalc(); forms = null; localStorage.removeItem("ddl_forms_" + code); render(); };
+
+function orderAmt(){ return Number($("oa").value) || 0; }
+
+function showCalc(){
+  if(!deal || !deal.winning_bid) return;
+  const a = orderAmt(), r = a - Number(deal.winning_bid);
+  $("calc").innerHTML = r < 0
+    ? "Order amount aapki bid se kam nahi ho sakta."
+    : "Aapki bid <b>" + rupee(deal.winning_bid) + "</b> · Refund milega <span class='big'>" + rupee(r) + "</span>";
+}
+
+async function openForm(which){
+  if(busy) return;
+  if(forms && forms[which]){ location.href = forms[which]; return; }
+
+  if(orderAmt() <= 0 || orderAmt() < Number(deal.winning_bid)){
+    setNote("Pehle sahi order amount daalein", true); return;
+  }
+
+  busy = true; setNote("Form khul raha hai...");
+  const set = await sb.rpc("ddl_set_order_amount", { p_code: code, p_token: me.token, p_amount: orderAmt() });
+  if(set.data && !set.data.ok){ busy = false; setNote(set.data.msg, true); return; }
+  const { data } = await sb.rpc("ddl_claim", { p_code: code, p_token: me.token });
+  busy = false;
+  if(data && data.ok){
+    forms = { order: data.order_url, refund: data.refund_url };
+    localStorage.setItem("ddl_forms_" + code, JSON.stringify(forms));
+    render();
+    if(forms[which]) location.href = forms[which];
+    else setNote(which === "refund" ? "Is deal par refund form nahi laga hai" : "Order form link nahi mila", true);
+  } else {
+    setNote((data && data.msg) || "Link nahi mila, admin se baat karein", true);
+  }
+}
+
+$("refBtn").onclick = () => openForm("refund");
+
+$("bidBtn").onclick = async () => {
+  if(busy) return;
+
+  const won = me && deal.winner_id === me.id;
+  if(won && deal.status !== "live"){ openForm("order"); return; }
+
+  busy = true; $("bidBtn").disabled = true; setNote("");
+  const { data, error } = await sb.rpc("ddl_place_bid", { p_code: code, p_token: me.token });
+  busy = false;
+  if(error){ setNote("Network slow hai, dobara tap karein", true); }
+  else if(!data.ok){ setNote(data.msg, true); }
+  else { setNote("Aapki bid " + rupee(data.amount) + " lag gayi"); }
+  await loadDeal();
+};
+
+function setNote(t, err){ const n = $("note"); n.textContent = t || ""; n.className = err ? "note err" : "note"; }
+
+/* ---------- timer ---------- */
+function tick(){
+  if(!deal) return;
+  const ms = left();
+  const s = Math.ceil(ms / 1000);
+  $("t").textContent = Math.floor(s/60) + ":" + String(s%60).padStart(2,"0");
+  const hot = s <= 60 && deal.status === "live";
+  $("clock").classList.toggle("hot", hot);
+  $("bar").classList.toggle("hot", hot);
+  $("bar").style.transform = "scaleX(" + (deal.status === "live" ? ms / (deal.duration_sec*1000) : 0) + ")";
+
+  if(ms <= 0 && deal.status === "live" && !closing){
+    closing = true;
+    sb.rpc("ddl_close_deal", { p_code: code }).then(() => { closing = false; loadDeal(); });
+  }
+}
+
+/* ---------- render ---------- */
+function render(){
+  if(!deal) return;
+  $("title").textContent = deal.title || ("Deal #" + deal.code);
+  $("sub").innerHTML = "Code <b>" + deal.code + "</b> · Product <b>" + rupee(deal.mrp) +
+                       "</b> · Max bid <b>" + rupee(cap()) + "</b>";
+
+  const live = deal.status === "live";
+  const iWon = me && deal.winner_id === me.id;
+
+  $("amt").textContent = deal.current_bid === null ? rupee(deal.start_bid) : rupee(deal.current_bid);
+  $("lead").textContent = deal.current_bid === null ? "Shuruaati bid" : "Abhi ki bid";
+  $("by").innerHTML = deal.current_bidder_name
+      ? "<span>Top par</span> " + esc(deal.current_bidder_name)
+      : "<span>Abhi koi bidder nahi</span>";
+
+  const btn = $("bidBtn"), clock = $("clock");
+  $("refBtn").classList.toggle("hide", !(iWon && forms && forms.refund));
+  $("winBox").classList.toggle("hide", !iWon);
+  if(iWon){
+    if(document.activeElement !== $("oa") && !$("oa").value)
+      $("oa").value = deal.order_amount || deal.mrp;
+    showCalc();
+  }
+
+  if(live){
+    clock.style.display = "flex";
+    btn.className = "cta";
+    if(!me){ btn.textContent = "Bid " + rupee(nextBid()); btn.disabled = true; }
+    else if(me.id === deal.current_bidder_id){ btn.textContent = "Aap top par hain"; btn.disabled = true; }
+    else if(nextBid() > cap()){ btn.textContent = "Max bid pahunch gayi"; btn.disabled = true; }
+    else { btn.textContent = "Bid " + rupee(nextBid()); btn.disabled = false; }
+  } else {
+    clock.style.display = "none";
+    if(deal.status === "expired"){
+      $("by").innerHTML = "<span>Kisi ne bid nahi lagayi</span>";
+      btn.textContent = "Bidding khatam"; btn.className = "cta"; btn.disabled = true;
+    } else if(iWon && deal.status !== "ordered"){
+      $("lead").textContent = "Aap jeet gaye";
+      $("amt").textContent = rupee(deal.winning_bid);
+      $("by").innerHTML = "<span>Deal aapke naam par 15 minute ke liye block hai</span>";
+      btn.textContent = "Order form kholein"; btn.className = "cta claim"; btn.disabled = false;
+    } else if(iWon && deal.status === "ordered"){
+      $("lead").textContent = "Aap jeet gaye";
+      $("amt").textContent = rupee(deal.winning_bid);
+      btn.textContent = "Form dobara kholein"; btn.className = "cta claim"; btn.disabled = false;
+    } else {
+      $("lead").textContent = "Winning bid";
+      $("amt").textContent = rupee(deal.winning_bid);
+      $("by").innerHTML = "<span>Jeete</span> " + esc(deal.winner_name || "—");
+      btn.textContent = "Agli deal ka intezaar karein"; btn.className = "cta"; btn.disabled = true;
+    }
+  }
+
+  $("rules").innerHTML =
+    "Bid " + rupee(deal.start_bid) + " se shuru hoti hai aur har tap par " + rupee(deal.step) + " badhti hai. " +
+    "Maximum " + rupee(cap()) + " tak (product price ka " + deal.cap_pct + "%). " +
+    "Timer khatam hone par sabse upar wala jeetta hai — ya jo pehle " + rupee(cap()) + " par pahunch jaye. " +
+    "Order form sirf jeetne wale ko khulta hai, 15 minute ke andar. " +
+    "Refund form bhi usi ko milta hai, refund amount apne aap nikal kar bhara hua.";
+
+  $("you").innerHTML = me ? ("Aap bid kar rahe hain " + esc(me.name) + " ke naam se · <a href='#' id='sw'>badlein</a>") : "";
+  const sw = $("sw");
+  if(sw) sw.onclick = e => {
+    e.preventDefault();
+    localStorage.removeItem("ddl_bid_user");
+    localStorage.removeItem("ddl_forms_" + code);
+    location.reload();
+  };
+
+  tick();
+}
+
+function renderBids(){
+  const box = $("list");
+  if(!bids.length){ box.innerHTML = "<div class='empty'>Abhi tak koi bid nahi. Pehli bid aapki ho sakti hai.</div>"; return; }
+  box.innerHTML = bids.map((b,i) =>
+    "<div class='row " + (i===0 ? "top" : "") + "'>" +
+      "<div class='w'>" + (bids.length - i) + "</div>" +
+      "<div class='n'>" + esc(b.bidder_name) + "</div>" +
+      "<div class='a'>" + rupee(b.amount) + "</div>" +
+    "</div>").join("");
+}
+
+function esc(s){ return String(s||"").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c])); }
+</script>
+</body>
+</html>
