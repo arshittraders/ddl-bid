@@ -251,6 +251,7 @@ function showCalc(){
 async function openForm(which){
   if(busy) return;
   if(forms && forms[which]){ location.href = forms[which]; return; }
+  if(forms && !forms[which]) forms = null;   // purana cache — server se dobara poochho
 
   if(orderAmt() <= 0 || orderAmt() < Number(deal.winning_bid)){
     setNote("Pehle sahi order amount daalein", true); return;
@@ -351,7 +352,7 @@ function render(){
 
   const btn = $("bidBtn"), clock = $("clock");
   $("refBtn").classList.toggle("hide", !(iWon && forms && forms.refund));
-  $("buyBtn").classList.toggle("hide", !(iWon && (!forms || forms.product)));
+  $("buyBtn").classList.toggle("hide", !iWon);
 
   const shots = [deal.image1, deal.image2].filter(Boolean);
   $("shots").classList.toggle("hide", !shots.length);
