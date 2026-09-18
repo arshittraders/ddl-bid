@@ -32,6 +32,10 @@
   .meta{margin-top:8px;font-size:14px;color:var(--muted)}
   .meta b{color:var(--ink);font-weight:600}
 
+  .shots{margin-top:20px;display:flex;gap:10px}
+  .shots img{flex:1;min-width:0;height:190px;object-fit:cover;border-radius:18px;
+             border:1px solid var(--line);background:var(--surface);cursor:zoom-in}
+  .shots.one img{height:240px}
   .hero{margin-top:22px;padding:26px 22px;border-radius:22px;
         background:linear-gradient(135deg,#f2fbf7,#eef5ff);border:1px solid var(--line)}
   .lead{font-size:14px;color:var(--muted)}
@@ -61,6 +65,7 @@
   .calc{margin-top:10px;font-size:14px;line-height:1.6;color:var(--muted)}
   .calc b{color:var(--ink)}
   .calc .big{color:var(--g1);font-weight:800;font-size:17px}
+  .cta.buy{background:linear-gradient(135deg,#b45309,#d97706);box-shadow:0 8px 22px rgba(180,83,9,.22)}
   .cta.ghost{margin-top:10px;background:#fff;color:var(--ink);border:1.5px solid var(--line);
              box-shadow:none;font-size:16px}
   .note{margin-top:10px;font-size:13px;color:var(--muted);text-align:center;min-height:18px}
@@ -117,6 +122,8 @@
       <div class="meta" id="sub"></div>
     </header>
 
+    <div class="shots hide" id="shots"></div>
+
     <div class="hero">
       <div class="lead" id="lead">Abhi ki bid</div>
       <div class="amt" id="amt">₹0</div>
@@ -128,6 +135,7 @@
         <div class="calc" id="calc"></div>
       </div>
       <button class="cta" id="bidBtn">Bid</button>
+      <button class="cta buy hide" id="buyBtn">Product kholein aur order karein</button>
       <button class="cta ghost hide" id="refBtn">Refund form kholein</button>
       <div class="note" id="note"></div>
     </div>
@@ -249,17 +257,20 @@ async function openForm(which){
   const { data } = await sb.rpc("ddl_claim", { p_code: code, p_token: me.token });
   busy = false;
   if(data && data.ok){
-    forms = { order: data.order_url, refund: data.refund_url };
+    forms = { order: data.order_url, refund: data.refund_url, product: data.product_url };
     localStorage.setItem("ddl_forms_" + code, JSON.stringify(forms));
     render();
     if(forms[which]) location.href = forms[which];
-    else setNote(which === "refund" ? "Is deal par refund form nahi laga hai" : "Order form link nahi mila", true);
+    else setNote(which === "refund" ? "Is deal par refund form nahi laga hai"
+               : which === "product" ? "Is deal par product link nahi laga hai"
+               : "Order form link nahi mila", true);
   } else {
     setNote((data && data.msg) || "Link nahi mila, admin se baat karein", true);
   }
 }
 
 $("refBtn").onclick = () => openForm("refund");
+$("buyBtn").onclick = () => openForm("product");
 
 $("bidBtn").onclick = async () => {
   if(busy) return;
@@ -313,6 +324,16 @@ function render(){
 
   const btn = $("bidBtn"), clock = $("clock");
   $("refBtn").classList.toggle("hide", !(iWon && forms && forms.refund));
+  $("buyBtn").classList.toggle("hide", !(iWon && forms && forms.product));
+
+  const shots = [deal.image1, deal.image2].filter(Boolean);
+  $("shots").classList.toggle("hide", !shots.length);
+  $("shots").classList.toggle("one", shots.length === 1);
+  if(shots.length && $("shots").dataset.src !== shots.join("|")){
+    $("shots").dataset.src = shots.join("|");
+    $("shots").innerHTML = shots.map(u =>
+      "<img src='" + esc(u) + "' alt='Product photo' onclick=\"window.open(this.src,'_blank')\">").join("");
+  }
   $("winBox").classList.toggle("hide", !iWon);
   if(iWon){
     if(document.activeElement !== $("oa") && !$("oa").value)
@@ -336,7 +357,8 @@ function render(){
       $("lead").textContent = "Aap jeet gaye";
       $("amt").textContent = rupee(deal.winning_bid);
       $("by").innerHTML = "<span>Deal aapke naam par 15 minute ke liye block hai</span>";
-      btn.textContent = "Order form kholein"; btn.className = "cta claim"; btn.disabled = false;
+      btn.textContent = (forms && forms.product) ? "Order form kholein" : "Deal kholein";
+      btn.className = "cta claim"; btn.disabled = false;
     } else if(iWon && deal.status === "ordered"){
       $("lead").textContent = "Aap jeet gaye";
       $("amt").textContent = rupee(deal.winning_bid);

@@ -39,6 +39,9 @@
   .pill.live{background:#e8f8f1;color:#0b7a55}
   .pill.ordered{background:#eaf0ff;color:#2a48b8}
   .end{padding:7px 11px;border-radius:9px;background:var(--surface);font-size:12px;font-weight:600;color:var(--muted)}
+  input[type=file]{padding:10px;background:#fff}
+  .thumbs{display:flex;gap:10px;margin-bottom:14px}
+  .thumbs img{width:76px;height:76px;object-fit:cover;border-radius:12px;border:1px solid var(--line)}
   .hide{display:none}
 </style>
 </head>
@@ -97,6 +100,15 @@
         <div><label for="cappct">Max bid <span class="hint">(% of price)</span></label><input id="cappct" type="number" value="50"></div>
         <div><label for="mins">Timer <span class="hint">(minutes)</span></label><input id="mins" type="number" value="5"></div>
       </div>
+
+      <label for="prod">Product ka link <span class="hint">— sirf winner ko dikhega</span></label>
+      <input id="prod" placeholder="https://... deal ya affiliate link">
+
+      <div class="grid">
+        <div><label for="img1">Photo 1 <span class="hint">optional</span></label><input id="img1" type="file" accept="image/*"></div>
+        <div><label for="img2">Photo 2 <span class="hint">optional</span></label><input id="img2" type="file" accept="image/*"></div>
+      </div>
+      <div class="thumbs" id="thumbs"></div>
 
       <label for="form">Order form <span class="hint">— khali chhodo to upar wala default lagega</span></label>
       <input id="form" placeholder="Default use karein">
@@ -172,6 +184,21 @@ async function refresh(){
   if(data && data.ok) paint(data.deals);
 }
 
+function preview(){
+  const files = [$("img1").files[0], $("img2").files[0]].filter(Boolean);
+  $("thumbs").innerHTML = files.map(f => "<img src='" + URL.createObjectURL(f) + "'>").join("");
+}
+$("img1").onchange = preview;
+$("img2").onchange = preview;
+
+async function uploadImg(file, code, n){
+  const ext = (file.name.split(".").pop() || "jpg").toLowerCase();
+  const path = code + "-" + n + "-" + Date.now() + "." + ext;
+  const { error } = await sb.storage.from("deal-images").upload(path, file, { upsert: true });
+  if(error) throw error;
+  return sb.storage.from("deal-images").getPublicUrl(path).data.publicUrl;
+}
+
 $("create").onclick = async () => {
   const p = {
     code: $("code").value.trim(),
@@ -182,13 +209,29 @@ $("create").onclick = async () => {
     cap_pct: Number($("cappct").value),
     minutes: Number($("mins").value),
     order_form_url: $("form").value.trim(),
-    refund_form_url: $("refund").value.trim()
+    refund_form_url: $("refund").value.trim(),
+    product_url: $("prod").value.trim()
   };
   if(!p.code || !p.mrp){
     $("note").className = "note err"; $("note").textContent = "Deal code aur product price zaroori hain";
     return;
   }
-  $("note").className = "note"; $("note").textContent = "Ban rahi hai...";
+  $("note").className = "note";
+
+  try {
+    const f1 = $("img1").files[0], f2 = $("img2").files[0];
+    if(f1 || f2){
+      $("note").textContent = "Photo upload ho rahi hai...";
+      if(f1) p.image1 = await uploadImg(f1, p.code, 1);
+      if(f2) p.image2 = await uploadImg(f2, p.code, 2);
+    }
+  } catch(e){
+    $("note").className = "note err";
+    $("note").textContent = "Photo upload nahi hui: " + (e.message || e);
+    return;
+  }
+
+  $("note").textContent = "Ban rahi hai...";
   const { data, error } = await sb.rpc("ddl_admin_create_deal", { p_pass: pass, p });
   if(error || !data.ok){
     $("note").className = "note err";
@@ -200,6 +243,7 @@ $("create").onclick = async () => {
   const box = $("linkBox");
   box.classList.remove("hide");
   box.innerHTML = esc(url) + "<br><button id='cp'>Link copy karein</button> <button id='wa'>WhatsApp par bhejein</button>";
+  $("img1").value = ""; $("img2").value = ""; $("thumbs").innerHTML = "";
   $("cp").onclick = () => { navigator.clipboard.writeText(url); $("cp").textContent = "Copy ho gaya"; };
   $("wa").onclick = () => {
     const msg = "🔥 LIVE BID — " + (p.title || ("Deal " + p.code)) +
