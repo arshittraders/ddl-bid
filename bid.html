@@ -133,10 +133,15 @@
         <label for="oa">Order amount — jo aap actually pay karenge</label>
         <input id="oa" type="number" inputmode="numeric">
         <div class="calc" id="calc"></div>
+        <div id="oidWrap" style="margin-top:14px">
+          <label for="oid">Order ID — order form me jo daali</label>
+          <input id="oid" type="text" placeholder="#245123456789">
+        </div>
       </div>
-      <button class="cta" id="bidBtn">Bid</button>
       <button class="cta buy hide" id="buyBtn">Product kholein aur order karein</button>
+      <button class="cta" id="bidBtn">Bid</button>
       <button class="cta ghost hide" id="refBtn">Refund form kholein</button>
+      <button class="cta ghost hide" id="shareBtn">WhatsApp par save karein</button>
       <div class="note" id="note"></div>
     </div>
 
@@ -272,6 +277,28 @@ async function openForm(which){
 $("refBtn").onclick = () => openForm("refund");
 $("buyBtn").onclick = () => openForm("product");
 
+$("shareBtn").onclick = async () => {
+  const oid = $("oid").value.trim();
+  if(oid.length < 4){ setNote("Pehle apni Order ID daalein", true); return; }
+
+  const r = await sb.rpc("ddl_set_order_id", { p_code: code, p_token: me.token, p_order_id: oid });
+  if(r.data && !r.data.ok){ setNote(r.data.msg, true); return; }
+
+  const amt = orderAmt() || Number(deal.mrp);
+  const msg =
+    "Daily Deals Legends — deal book ho gayi\n\n" +
+    "Product: " + (deal.title || "Deal " + deal.code) + "\n" +
+    "Code: " + deal.code + "\n" +
+    "Product price: " + rupee(amt) + "\n" +
+    "Meri bid: " + rupee(deal.winning_bid) + "\n" +
+    "Order ID: " + oid + "\n" +
+    "Refund milega: " + rupee(amt - Number(deal.winning_bid)) + "\n" +
+    "Date: " + new Date().toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
+
+  window.open("https://wa.me/?text=" + encodeURIComponent(msg), "_blank");
+  setNote("WhatsApp khul raha hai — apne aap ko ya group me bhej dein");
+};
+
 $("bidBtn").onclick = async () => {
   if(busy) return;
 
@@ -324,7 +351,7 @@ function render(){
 
   const btn = $("bidBtn"), clock = $("clock");
   $("refBtn").classList.toggle("hide", !(iWon && forms && forms.refund));
-  $("buyBtn").classList.toggle("hide", !(iWon && forms && forms.product));
+  $("buyBtn").classList.toggle("hide", !(iWon && (!forms || forms.product)));
 
   const shots = [deal.image1, deal.image2].filter(Boolean);
   $("shots").classList.toggle("hide", !shots.length);
@@ -335,9 +362,13 @@ function render(){
       "<img src='" + esc(u) + "' alt='Product photo' onclick=\"window.open(this.src,'_blank')\">").join("");
   }
   $("winBox").classList.toggle("hide", !iWon);
+  $("shareBtn").classList.toggle("hide", !iWon);
+  $("oidWrap").classList.toggle("hide", !iWon);
   if(iWon){
     if(document.activeElement !== $("oa") && !$("oa").value)
       $("oa").value = deal.order_amount || deal.mrp;
+    if(document.activeElement !== $("oid") && !$("oid").value && deal.order_id)
+      $("oid").value = deal.order_id;
     showCalc();
   }
 
@@ -357,8 +388,7 @@ function render(){
       $("lead").textContent = "Aap jeet gaye";
       $("amt").textContent = rupee(deal.winning_bid);
       $("by").innerHTML = "<span>Deal aapke naam par 15 minute ke liye block hai</span>";
-      btn.textContent = (forms && forms.product) ? "Order form kholein" : "Deal kholein";
-      btn.className = "cta claim"; btn.disabled = false;
+      btn.textContent = "Order form kholein"; btn.className = "cta claim"; btn.disabled = false;
     } else if(iWon && deal.status === "ordered"){
       $("lead").textContent = "Aap jeet gaye";
       $("amt").textContent = rupee(deal.winning_bid);

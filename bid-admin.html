@@ -266,8 +266,9 @@ function paint(deals){
       ? "Abhi " + (d.current_bid ? rupee(d.current_bid) + " · " + esc(d.current_bidder_name) : "koi bid nahi") +
         " · " + Math.floor(secs/60) + ":" + String(secs%60).padStart(2,"0") + " bache"
       : d.status === "expired" ? "Koi bid nahi aayi"
-      : "Jeete " + esc(d.winner_name) + " · " + rupee(d.winning_bid) +
-        (d.status === "ordered" ? " · form khol chuke hain" : " · form abhi nahi khola");
+      : "Jeete " + esc(d.winner_name) + " · bid " + rupee(d.winning_bid) +
+        (d.order_amount ? " · order " + rupee(d.order_amount) : "") +
+        (d.order_id ? " · ID " + esc(d.order_id) : (d.status === "ordered" ? " · form khol chuke hain" : " · form abhi nahi khola"));
     return "<div class='deal'><div class='m'><div class='t'>" + esc(d.title || d.code) +
       " <span class='hint'>#" + esc(d.code) + "</span></div>" +
       "<div class='d'>" + line + " · " + d.bid_count + " bids · max " + rupee(d.mrp*d.cap_pct/100) + "</div></div>" +
